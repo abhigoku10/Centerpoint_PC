@@ -270,8 +270,8 @@ class CenterPoint:
 
 if __name__ == "__main__":
             ## CenterPoint
-    config_path = 'configs/nusc/voxelnet/custom_cntpt_voxelnet_0075voxel_dcn_flip.py'
-    model_path = 'models/last.pth'
+    config_path = '/content/Centerpoint_PC/configs/nusc/pp/cust_cntpt_pp02voxel_2fcn10sweep.py'
+    model_path = '/content/drive/MyDrive/PointCloud_model/centerpoint_nusc/latest.pth'
     pc_data = np.fromfile('/content/drive/MyDrive/PointCloudData/customer/frame_4042.bin',dtype=np.float32)
 
     cntrpt = CenterPoint(config_path, model_path)
