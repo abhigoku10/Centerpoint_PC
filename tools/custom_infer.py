@@ -15,7 +15,12 @@ from det3d.torchie import Config
 from det3d.core.input.voxel_generator import VoxelGenerator
 
 
+import pickle 
+import time 
 
+def save_pred(pred, root):
+    with open(os.path.join(root, "prediction.pkl"), "wb") as f:
+        pickle.dump(pred, f)
 
 def yaw2quaternion(yaw: float) -> Quaternion:
     return Quaternion(axis=[0,0,1], radians=yaw)
@@ -252,9 +257,26 @@ class CenterPoint:
         #                 # Write to disk.
         #         label_file.write(output + '\n')   
 
-    def savpredpkl(self):
-        pass
+    def savpredpkl(self,scores,detbox,types,pc_data,savepath):
+        
 
+        predictions = {}
+
+        predictions['filename']=
+        predictions['scores'] = scores
+        predictions ['label']=types
+        predictions['boxes_pred']=detbox
+        
+        # for p in all_predictions:
+        #     predictions.update(p)
+
+        # if not os.path.exists(args.work_dir):
+        #     os.makedirs(args.work_dir)
+
+        # save_pred(predictions, args.work_dir)
+        
+        with open(os.path.join(savepath, "prediction.pkl"), "wb") as f:
+            pickle.dump(predictions, f)
 
 
 
@@ -269,12 +291,14 @@ if __name__ == "__main__":
     config_path = 'configs/nusc/voxelnet/custom_cntpt_voxelnet_0075voxel_dcn_flip.py'
     model_path = 'models/last.pth'
     pc_data = np.fromfile('',dtype=np.float32)
+    savepath= 
 
     cntrpt = CenterPoint(config_path, model_path)
     
     cntrpt.initialize()
     scores, dt_box_lidar,types = cntrpt.run(pc_data)
     # bbox = cntrpt.bbox_conv(scores,dt_box_lidar)
+    savpredpkl(scores,detbox,types,pc_data,savepath)
 
     print("The scores {} and bbox {} with label {}".format(scores,dt_box_lidar,types))
     
