@@ -7,7 +7,7 @@ import torch
 import time 
 import sys 
 sys.path.append('/content/Centerpoint_PC')
-
+import argparse
 
 
 from pyquaternion import Quaternion
@@ -30,6 +30,16 @@ detection_class_map = {
     4: 'trailer',
     1: 'truck'
 }
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Custome data")
+    parser.add_argument("--config", help="Configy file path ")
+    parser.add_argument("--save_dir", required=True, help="the dir to save logs and models")
+    parser.add_argument("--checkpoint", help="the dir to checkpoint which the model read from")
+    parser.add_argument("--pc_folder", help="the dir to load all the point cloud files from folder ")
+    args = parser.parse_args()
+    return args
+
 
 def get_annotations_indices(types, thresh, label_preds, scores):
     indexs = []
@@ -290,27 +300,41 @@ class CenterPoint:
         #                 # Write to disk.
         #         label_file.write(output + '\n')   
 
-    
 
 
+def main():
+    args = parse_args()  
 
+    config_path = args.config
+    model_path = args.checkpoint
+    opsavepath =args.save_dir   
+    pc_folder = args.pc_folder
 
-
-
-
-
-
-if __name__ == "__main__":
-            ## CenterPoint
-    config_path = '/content/Centerpoint_PC/configs/nusc/pp/cust_cntpt_pp02voxel_2fcn10sweep.py'
-    model_path = '/content/drive/MyDrive/PointCloud_model/centerpoint_nusc/latest.pth'
-    opsavepath ='/content/drive/MyDrive/PointCloud_model'
-   
-    pc_folder = '/content/drive/MyDrive/PointCloudData/customer'
-    
+    # config_path = '/content/Centerpoint_PC/configs/nusc/pp/cust_cntpt_pp02voxel_2fcn10sweep.py'
+    # model_path = '/content/drive/MyDrive/PointCloud_model/centerpoint_nusc/latest.pth'
+    # opsavepath ='/content/drive/MyDrive/PointCloud_model'   
+    # pc_folder = '/content/drive/MyDrive/PointCloudData/customer'
 
     cntrpt = CenterPoint(config_path, model_path,opsavepath)    
     cntrpt.initialize()
     cntrpt.run(pc_folder)
+
+
+
+if __name__ == "__main__":
+
+    main()
+
+    # ###cmd : custom_infer.py 
+    # config_path = '/content/Centerpoint_PC/configs/nusc/pp/cust_cntpt_pp02voxel_2fcn10sweep.py'
+    # model_path = '/content/drive/MyDrive/PointCloud_model/centerpoint_nusc/latest.pth'
+    # opsavepath ='/content/drive/MyDrive/PointCloud_model'
+   
+    # pc_folder = '/content/drive/MyDrive/PointCloudData/customer'
+    
+
+    # cntrpt = CenterPoint(config_path, model_path,opsavepath)    
+    # cntrpt.initialize()
+    # cntrpt.run(pc_folder)
 
     
