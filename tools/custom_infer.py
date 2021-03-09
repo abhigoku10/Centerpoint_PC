@@ -6,7 +6,7 @@ import sys
 import torch
 import time 
 
-import BoundingBox, BoundingBoxArray
+# import BoundingBox, BoundingBoxArray
 
 from pyquaternion import Quaternion
 from det3d import __version__, torchie
