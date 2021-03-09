@@ -5,6 +5,8 @@ import os
 import sys
 import torch
 import time 
+import sys 
+sys.path.append('/content/Centerpoint_PC')
 
 # import BoundingBox, BoundingBoxArray
 
@@ -68,44 +70,44 @@ def remove_low_score_nu(image_anno, thresh):
     return img_filtered_annotations
 
 
-def box_to_string(name: str,
-                      box: Box,
-                      bbox_2d: Tuple[float, float, float, float] = (-1.0, -1.0, -1.0, -1.0),
-                      truncation: float = -1.0,
-                      occlusion: int = -1,
-                      alpha: float = -10.0,
-                      score=scores) -> str:
-        """
-        Convert box in KITTI image frame to official label string fromat.
-        :param name: KITTI name of the box.
-        :param box: Box class in KITTI image frame.
-        :param bbox_2d: Optional, 2D bounding box obtained by projected Box into image (xmin, ymin, xmax, ymax).
-            Otherwise set to KITTI default.
-        :param truncation: Optional truncation, otherwise set to KITTI default.
-        :param occlusion: Optional occlusion, otherwise set to KITTI default.
-        :param alpha: Optional alpha, otherwise set to KITTI default.
-        :return: KITTI string representation of box.
-        """
-        # Convert quaternion to yaw angle.
-        v = np.dot(box.rotation_matrix, np.array([1, 0, 0]))
-        yaw = -np.arctan2(v[2], v[0])
+# def box_to_string(name: str,
+#                       box: Box,
+#                       bbox_2d: Tuple[float, float, float, float] = (-1.0, -1.0, -1.0, -1.0),
+#                       truncation: float = -1.0,
+#                       occlusion: int = -1,
+#                       alpha: float = -10.0,
+#                       score=scores) -> str:
+#         """
+#         Convert box in KITTI image frame to official label string fromat.
+#         :param name: KITTI name of the box.
+#         :param box: Box class in KITTI image frame.
+#         :param bbox_2d: Optional, 2D bounding box obtained by projected Box into image (xmin, ymin, xmax, ymax).
+#             Otherwise set to KITTI default.
+#         :param truncation: Optional truncation, otherwise set to KITTI default.
+#         :param occlusion: Optional occlusion, otherwise set to KITTI default.
+#         :param alpha: Optional alpha, otherwise set to KITTI default.
+#         :return: KITTI string representation of box.
+#         """
+#         # Convert quaternion to yaw angle.
+#         v = np.dot(box.rotation_matrix, np.array([1, 0, 0]))
+#         yaw = -np.arctan2(v[2], v[0])
 
-        # Prepare output.
-        name += ' '
-        trunc = '{:.2f} '.format(truncation)
-        occ = '{:d} '.format(occlusion)
-        a = '{:.2f} '.format(alpha)
-        bb = '{:.2f} {:.2f} {:.2f} {:.2f} '.format(bbox_2d[0], bbox_2d[1], bbox_2d[2], bbox_2d[3])
-        hwl = '{:.2} {:.2f} {:.2f} '.format(box.wlh[2], box.wlh[0], box.wlh[1])  # height, width, length.
-        xyz = '{:.2f} {:.2f} {:.2f} '.format(box.center[0], box.center[1], box.center[2])  # x, y, z.
-        y = '{:.2f}'.format(yaw)  # Yaw angle.
-        s = ' {:.4f}'.format(scores)  # Classification score.
+#         # Prepare output.
+#         name += ' '
+#         trunc = '{:.2f} '.format(truncation)
+#         occ = '{:d} '.format(occlusion)
+#         a = '{:.2f} '.format(alpha)
+#         bb = '{:.2f} {:.2f} {:.2f} {:.2f} '.format(bbox_2d[0], bbox_2d[1], bbox_2d[2], bbox_2d[3])
+#         hwl = '{:.2} {:.2f} {:.2f} '.format(box.wlh[2], box.wlh[0], box.wlh[1])  # height, width, length.
+#         xyz = '{:.2f} {:.2f} {:.2f} '.format(box.center[0], box.center[1], box.center[2])  # x, y, z.
+#         y = '{:.2f}'.format(yaw)  # Yaw angle.
+#         s = ' {:.4f}'.format(scores)  # Classification score.
 
-        output = name + trunc + occ + a + bb + hwl + xyz + y
-        if ~np.isnan(box.score):
-            output += s
+#         output = name + trunc + occ + a + bb + hwl + xyz + y
+#         if ~np.isnan(box.score):
+#             output += s
 
-        return output
+#         return output
 
 
 
@@ -143,6 +145,8 @@ class CenterPoint:
 
     def run(self, points):
         t_t = time.time()
+        print(type(points))
+        print(points.shape)
         print(f"input points shape: {points.shape}")
         num_features = 4        
         self.points = points.reshape([-1, num_features])
