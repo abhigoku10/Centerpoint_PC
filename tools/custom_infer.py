@@ -11,7 +11,7 @@ sys.path.append('/content/Centerpoint_PC')
 # import BoundingBox, BoundingBoxArray
 
 from pyquaternion import Quaternion
-from det3d import __version__, torchie
+from det3d import torchie
 from det3d.models import build_detector
 from det3d.torchie import Config
 from det3d.core.input.voxel_generator import VoxelGenerator
