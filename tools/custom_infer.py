@@ -8,7 +8,7 @@ import time
 import sys 
 sys.path.append('/content/Centerpoint_PC')
 
-# import BoundingBox, BoundingBoxArray
+
 
 from pyquaternion import Quaternion
 from det3d import torchie
@@ -18,11 +18,18 @@ from det3d.core.input.voxel_generator import VoxelGenerator
 
 
 
-
-def yaw2quaternion(yaw: float) -> Quaternion:
-    return Quaternion(axis=[0,0,1], radians=yaw)
-
-
+detection_class_map = {
+    5: 'barrier',
+    7: 'bicycle',
+    3: 'bus',
+    0: 'car',
+    2: 'construction_vehicle',
+    6 :'motorcycle',
+    8: 'pedestrian',
+    9: 'traffic_cone',
+    4: 'trailer',
+    1: 'truck'
+}
 
 def get_annotations_indices(types, thresh, label_preds, scores):
     indexs = []
@@ -70,49 +77,45 @@ def remove_low_score_nu(image_anno, thresh):
     return img_filtered_annotations
 
 
-# def box_to_string(name: str,
-#                       box: Box,
-#                       bbox_2d: Tuple[float, float, float, float] = (-1.0, -1.0, -1.0, -1.0),
-#                       truncation: float = -1.0,
-#                       occlusion: int = -1,
-#                       alpha: float = -10.0,
-#                       score=scores) -> str:
-#         """
-#         Convert box in KITTI image frame to official label string fromat.
-#         :param name: KITTI name of the box.
-#         :param box: Box class in KITTI image frame.
-#         :param bbox_2d: Optional, 2D bounding box obtained by projected Box into image (xmin, ymin, xmax, ymax).
-#             Otherwise set to KITTI default.
-#         :param truncation: Optional truncation, otherwise set to KITTI default.
-#         :param occlusion: Optional occlusion, otherwise set to KITTI default.
-#         :param alpha: Optional alpha, otherwise set to KITTI default.
-#         :return: KITTI string representation of box.
-#         """
-#         # Convert quaternion to yaw angle.
-#         v = np.dot(box.rotation_matrix, np.array([1, 0, 0]))
-#         yaw = -np.arctan2(v[2], v[0])
 
-#         # Prepare output.
-#         name += ' '
-#         trunc = '{:.2f} '.format(truncation)
-#         occ = '{:d} '.format(occlusion)
-#         a = '{:.2f} '.format(alpha)
-#         bb = '{:.2f} {:.2f} {:.2f} {:.2f} '.format(bbox_2d[0], bbox_2d[1], bbox_2d[2], bbox_2d[3])
-#         hwl = '{:.2} {:.2f} {:.2f} '.format(box.wlh[2], box.wlh[0], box.wlh[1])  # height, width, length.
-#         xyz = '{:.2f} {:.2f} {:.2f} '.format(box.center[0], box.center[1], box.center[2])  # x, y, z.
-#         y = '{:.2f}'.format(yaw)  # Yaw angle.
-#         s = ' {:.4f}'.format(scores)  # Classification score.
+def pred2string(scores, labels, pred_bbox, txtpath,outputfolder):
+    
 
-#         output = name + trunc + occ + a + bb + hwl + xyz + y
-#         if ~np.isnan(box.score):
-#             output += s
+    # truncation =0 
+    # occlusion=0 
+    # alpha=-10.0
+    # bbox_2d= [0,0,0,0]
+    file2write = open(os.path.join(outputfolder,txtpath[:-3]+ 'txt'),'w')
 
-#         return output
+    for score,label,bbox in zip(scores, labels, pred_bbox):
+
+        # Prepare output.
+        name= detection_class_map[label]
+        name += ' '
+        # trunc = '{:.2f} '.format(truncation)
+        # occ = '{:d} '.format(occlusion)
+        # a = '{:.2f} '.format(alpha)
+        # bb = '{:.2f} {:.2f} {:.2f} {:.2f} '.format(bbox_2d[0], bbox_2d[1], bbox_2d[2], bbox_2d[3])
+        wlh = '{:.2} {:.2f} {:.2f} '.format(bbox[3], bbox[4], bbox[5])  # height, width, length.
+        xyz = '{:.2f} {:.2f} {:.2f} '.format(bbox[0], bbox[1], bbox[2])  # x, y, z.
+        y = '{:.2f} '.format(bbox[8])  # Yaw angle.
+        vx= '{:.2f} '.format(bbox[6])
+        vy= '{:.2f} '.format(bbox[7])
+        s = ' {:.4f}\n'.format(score)  # Classification score.
+
+        output = name + xyz+wlh + y +vx+vy+s
+        # output = name + trunc + occ + a + bb + hwl + xyz + y
+        # if ~np.isnan(box.score):
+        #     output += s
+        file2write.write(output)
+    file2write.close()
+
+
 
 
 
 class CenterPoint:
-    def __init__(self, config_path, model_path):
+    def __init__(self, config_path, model_path,savingpath):
         self.points = None
         self.config_path = config_path
         self.model_path = model_path
@@ -120,6 +123,7 @@ class CenterPoint:
         self.net = None
         self.voxel_generator = None
         self.inputs = None
+        self.savepth =savingpath
         
     def initialize(self):
         self.read_config()
@@ -143,92 +147,122 @@ class CenterPoint:
             max_voxels=self.max_voxel_num,
         )
 
-    def run(self, points):
-        t_t = time.time()
-        print(type(points))
-        print(points.shape)
-        print(f"input points shape: {points.shape}")
-        num_features = 4        
-        self.points = points.reshape([-1, num_features])
-        self.points[:, 3] = 0 # timestamp value 
+    # def run(self, points):
+    #     t_t = time.time()
+    #     print(type(points))
+    #     print(points.shape)
+    #     print(f"input points shape: {points.shape}")
+    #     num_features =  4       
+    #     self.points = points.reshape([-1, num_features])
+    #     self.points[:, 3] = 0 # timestamp value #self.points = np.hstack((aself.points, np.zeros((self.points.shape[0], 1), dtype=self.points.dtype))) 
         
-        voxels, coords, num_points = self.voxel_generator.generate(self.points)
-        num_voxels = np.array([voxels.shape[0]], dtype=np.int64)
-        grid_size = self.voxel_generator.grid_size
-        coords = np.pad(coords, ((0, 0), (1, 0)), mode='constant', constant_values = 0)
+    #     voxels, coords, num_points = self.voxel_generator.generate(self.points)
+    #     num_voxels = np.array([voxels.shape[0]], dtype=np.int64)
+    #     grid_size = self.voxel_generator.grid_size
+    #     coords = np.pad(coords, ((0, 0), (1, 0)), mode='constant', constant_values = 0)
         
-        voxels = torch.tensor(voxels, dtype=torch.float32, device=self.device)
-        coords = torch.tensor(coords, dtype=torch.int32, device=self.device)
-        num_points = torch.tensor(num_points, dtype=torch.int32, device=self.device)
-        num_voxels = torch.tensor(num_voxels, dtype=torch.int32, device=self.device)
+    #     voxels = torch.tensor(voxels, dtype=torch.float32, device=self.device)
+    #     coords = torch.tensor(coords, dtype=torch.int32, device=self.device)
+    #     num_points = torch.tensor(num_points, dtype=torch.int32, device=self.device)
+    #     num_voxels = torch.tensor(num_voxels, dtype=torch.int32, device=self.device)
         
-        self.inputs = dict(
-            voxels = voxels,
-            num_points = num_points,
-            num_voxels = num_voxels,
-            coordinates = coords,
-            shape = [grid_size]
-        )
-        torch.cuda.synchronize()
-        t = time.time()
+    #     self.inputs = dict(
+    #         voxels = voxels,
+    #         num_points = num_points,
+    #         num_voxels = num_voxels,
+    #         coordinates = coords,
+    #         shape = [grid_size]
+    #     )
+    #     torch.cuda.synchronize()
+    #     t = time.time()
 
-        with torch.no_grad():
-            outputs = self.net(self.inputs, return_loss=False)[0]
+    #     with torch.no_grad():
+    #         outputs = self.net(self.inputs, return_loss=False)[0]
     
-        # print(f"output: {outputs}")
+    #     # print(f"output: {outputs}")
         
-        torch.cuda.synchronize()
-        print("  network predict time cost:", time.time() - t)
+    #     torch.cuda.synchronize()
+    #     print("  network predict time cost:", time.time() - t)
 
-        outputs = remove_low_score_nu(outputs, 0.45)
+    #     outputs = remove_low_score_nu(outputs, 0.45)
 
-        boxes_lidar = outputs["box3d_lidar"].detach().cpu().numpy()
-        print("  predict boxes:", boxes_lidar.shape)
+    #     boxes_lidar = outputs["box3d_lidar"].detach().cpu().numpy()
+    #     print("  predict boxes:", boxes_lidar.shape)
 
-        scores = outputs["scores"].detach().cpu().numpy()
-        types = outputs["label_preds"].detach().cpu().numpy()
+    #     scores = outputs["scores"].detach().cpu().numpy()
+    #     types = outputs["label_preds"].detach().cpu().numpy()
 
-        boxes_lidar[:, -1] = -boxes_lidar[:, -1] - np.pi / 2
+    #     boxes_lidar[:, -1] = -boxes_lidar[:, -1] - np.pi / 2
 
-        print(f"  total cost time: {time.time() - t_t}")
+    #     print(f"  total cost time: {time.time() - t_t}")
 
         
 
-        return scores, boxes_lidar, types
+    #     return scores, boxes_lidar, types
 
-    def bbox_conv(self,scores, det_box):
-        pass
 
-        # bbox_preds=BoundingBoxArray() #/[] 
-        # if scores.size != 0:
-        #     for i in range(scores.size):
-        #         bbox = BoundingBox()
-        #         q = yaw2quaternion(float(det_box[i][8]))
-        #         bbox.pose.orientation.x = q[1]
-        #         bbox.pose.orientation.y = q[2]
-        #         bbox.pose.orientation.z = q[3]
-        #         bbox.pose.orientation.w = q[0]           
-        #         bbox.pose.position.x = float(det_box[i][0])
-        #         bbox.pose.position.y = float(det_box[i][1])
-        #         bbox.pose.position.z = float(det_box[i][2])
-        #         bbox.dimensions.x = float(det_box[i][4])
-        #         bbox.dimensions.y = float(det_box[i][3])
-        #         bbox.dimensions.z = float(det_box[i][5])
-        #         bbox.value = scores[i]
-        #         # bbox.label = int(types[i])
 
-        #         # # Convert quaternion to yaw angle.
-        #         # v = np.dot(bbox.rotation_matrix, np.array([1, 0, 0]))
-        #         # yaw = -np.arctan2(v[2], v[0])
 
-        #         bbox_preds.boxes.append(bbox)
+    def run(self, pc_folder):
 
-        # return bbox_preds
+        for ipfile in os.listdir(pc_folder):
+            t_t = time.time()
+            print("Processing File is {}".format(ipfile))
+            self.points =  np.fromfile(os.path.join(pc_folder,ipfile),dtype=np.float32)           
+            print(points.shape)
+            # print(f"input points shape: {points.shape}")
+            num_features =  4       
+            self.points = points.reshape([-1, num_features])
+            self.points[:, 3] = 0 # timestamp value #self.points = np.hstack((aself.points, np.zeros((self.points.shape[0], 1), dtype=self.points.dtype))) 
+            
+            voxels, coords, num_points = self.voxel_generator.generate(self.points)
+            num_voxels = np.array([voxels.shape[0]], dtype=np.int64)
+            grid_size = self.voxel_generator.grid_size
+            coords = np.pad(coords, ((0, 0), (1, 0)), mode='constant', constant_values = 0)
+            
+            voxels = torch.tensor(voxels, dtype=torch.float32, device=self.device)
+            coords = torch.tensor(coords, dtype=torch.int32, device=self.device)
+            num_points = torch.tensor(num_points, dtype=torch.int32, device=self.device)
+            num_voxels = torch.tensor(num_voxels, dtype=torch.int32, device=self.device)
+            
+            self.inputs = dict(
+                voxels = voxels,
+                num_points = num_points,
+                num_voxels = num_voxels,
+                coordinates = coords,
+                shape = [grid_size]
+            )
+            torch.cuda.synchronize()
+            t = time.time()
+
+            with torch.no_grad():
+                outputs = self.net(self.inputs, return_loss=False)[0]
+        
+            # print(f"output: {outputs}")
+            
+            torch.cuda.synchronize()
+            print("  network predict time cost:", time.time() - t)
+
+            outputs = remove_low_score_nu(outputs, 0.45)
+
+            boxes_lidar = outputs["box3d_lidar"].detach().cpu().numpy()
+            print("  predict boxes:", boxes_lidar.shape)
+
+            scores = outputs["scores"].detach().cpu().numpy()
+            types = outputs["label_preds"].detach().cpu().numpy()
+
+            boxes_lidar[:, -1] = -boxes_lidar[:, -1] - np.pi / 2
+
+            print(f"  total cost time: {time.time() - t_t}")
+
+            pred2string(scores, boxes_lidar, types,ipfile,self.savepth)
+
+            # return scores, boxes_lidar, types
+
 
 
     def log_predkitti(self,scores,detbox,types):
         pass
-
         # # Write label file.
         # label_path = os.path.join(label_folder, sample_token + '.txt')
         # if os.path.exists(label_path):
@@ -251,14 +285,12 @@ class CenterPoint:
 
         #         # Convert box to output string format.
         #         output = box_to_string(name=detection_name, box=detbox,score=scores, 
-        #                                         truncation=truncated, occlusion=occluded) #bbox_2d=bbox_2d,
+        #                                         truncation=truncated, occlusion=occluded,bbox_2d=bbox_2d)
 
         #                 # Write to disk.
         #         label_file.write(output + '\n')   
 
-    def savpredpkl(self):
-        pass
-
+    
 
 
 
@@ -272,13 +304,13 @@ if __name__ == "__main__":
             ## CenterPoint
     config_path = '/content/Centerpoint_PC/configs/nusc/pp/cust_cntpt_pp02voxel_2fcn10sweep.py'
     model_path = '/content/drive/MyDrive/PointCloud_model/centerpoint_nusc/latest.pth'
-    pc_data = np.fromfile('/content/drive/MyDrive/PointCloudData/customer/frame_4042.bin',dtype=np.float32)
-
-    cntrpt = CenterPoint(config_path, model_path)
+    opsavepath ='/content/drive/MyDrive/PointCloud_model'
+   
+    pc_folder = '/content/drive/MyDrive/PointCloudData/customer'
     
-    cntrpt.initialize()
-    scores, dt_box_lidar,types = cntrpt.run(pc_data)
-    # bbox = cntrpt.bbox_conv(scores,dt_box_lidar)
 
-    print("The scores {} and bbox {} with label {}".format(scores,dt_box_lidar,types))
+    cntrpt = CenterPoint(config_path, model_path,opsavepath)    
+    cntrpt.initialize()
+    cntrpt.run(pc_folder)
+
     

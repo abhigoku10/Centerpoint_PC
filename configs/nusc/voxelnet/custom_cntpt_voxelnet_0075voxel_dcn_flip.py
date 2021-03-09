@@ -2,7 +2,7 @@ import itertools
 import logging
 
 from det3d.utils.config_tool import get_downsample_factor
-DOUBLE_FLIP = True 
+DOUBLE_FLIP = False 
 
 tasks = [
     dict(num_class=1, class_names=["car"]),
@@ -27,10 +27,10 @@ model = dict(
     reader=dict(
         type="VoxelFeatureExtractorV3",
         # type='SimpleVoxel',
-        num_input_features=5,
+        num_input_features=4,
     ),
     backbone=dict(
-        type="SpMiddleResNetFHD", num_input_features=5, ds_factor=8
+        type="SpMiddleResNetFHD", num_input_features=4, ds_factor=8
     ),
     neck=dict(
         type="RPN",
