@@ -226,6 +226,7 @@ class CenterPoint:
             num_features =  5       
             self.points = self.points.reshape([-1, 4])
             # self.points[:, 4] = 0 # timestamp value #
+            ##The above modification is required on custom data
             self.points = np.hstack((self.points, np.zeros((self.points.shape[0], 1), dtype=self.points.dtype))) 
             
             voxels, coords, num_points = self.voxel_generator.generate(self.points)
