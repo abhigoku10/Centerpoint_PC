@@ -8,6 +8,7 @@ import time
 import sys 
 sys.path.append('/content/Centerpoint_PC')
 import argparse
+import pdb
 
 
 from pyquaternion import Quaternion
@@ -100,6 +101,7 @@ def pred2string(scores, labels, pred_bbox, txtpath,outputfolder):
     for score,label,bbox in zip(scores, labels, pred_bbox):
 
         # Prepare output.
+        # pdb.set_trace()
         name= detection_class_map[label]
         name += ' '
         # trunc = '{:.2f} '.format(truncation)
@@ -219,11 +221,12 @@ class CenterPoint:
             t_t = time.time()
             print("Processing File is {}".format(ipfile))
             self.points =  np.fromfile(os.path.join(pc_folder,ipfile),dtype=np.float32)           
-            print(points.shape)
+            # print(points.shape)
             # print(f"input points shape: {points.shape}")
-            num_features =  4       
-            self.points = points.reshape([-1, num_features])
-            self.points[:, 3] = 0 # timestamp value #self.points = np.hstack((aself.points, np.zeros((self.points.shape[0], 1), dtype=self.points.dtype))) 
+            num_features =  5       
+            self.points = self.points.reshape([-1, 4])
+            # self.points[:, 4] = 0 # timestamp value #
+            self.points = np.hstack((self.points, np.zeros((self.points.shape[0], 1), dtype=self.points.dtype))) 
             
             voxels, coords, num_points = self.voxel_generator.generate(self.points)
             num_voxels = np.array([voxels.shape[0]], dtype=np.int64)
@@ -265,7 +268,7 @@ class CenterPoint:
 
             print(f"  total cost time: {time.time() - t_t}")
 
-            pred2string(scores, boxes_lidar, types,ipfile,self.savepth)
+            pred2string(scores, types,boxes_lidar,ipfile,self.savepth)
 
             # return scores, boxes_lidar, types
 
@@ -303,17 +306,22 @@ class CenterPoint:
 
 
 def main():
-    args = parse_args()  
+    # args = parse_args()  
 
-    config_path = args.config
-    model_path = args.checkpoint
-    opsavepath =args.save_dir   
-    pc_folder = args.pc_folder
+    # config_path = args.config
+    # model_path = args.checkpoint
+    # opsavepath =args.save_dir   
+    # pc_folder = args.pc_folder
 
     # config_path = '/content/Centerpoint_PC/configs/nusc/pp/cust_cntpt_pp02voxel_2fcn10sweep.py'
     # model_path = '/content/drive/MyDrive/PointCloud_model/centerpoint_nusc/latest.pth'
     # opsavepath ='/content/drive/MyDrive/PointCloud_model'   
     # pc_folder = '/content/drive/MyDrive/PointCloudData/customer'
+
+    config_path = '/content/Centerpoint_PC/configs/nusc/voxelnet/custom_cntpt_voxelnet_0075voxel_dcn_flip.py'
+    model_path = '/content/drive/MyDrive/PointCloud_model/centerpoint_nusc/voxelnet_converted.pth'
+    opsavepath ='/content/drive/MyDrive/PointCloudData/od_cntpt'   
+    pc_folder = '/content/drive/MyDrive/PointCloudData/customer'
 
     cntrpt = CenterPoint(config_path, model_path,opsavepath)    
     cntrpt.initialize()

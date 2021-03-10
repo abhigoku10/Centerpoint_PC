@@ -27,10 +27,10 @@ model = dict(
     reader=dict(
         type="VoxelFeatureExtractorV3",
         # type='SimpleVoxel',
-        num_input_features=4,
+        num_input_features=5,
     ),
     backbone=dict(
-        type="SpMiddleResNetFHD", num_input_features=4, ds_factor=8
+        type="SpMiddleResNetFHD", num_input_features=5, ds_factor=8
     ),
     neck=dict(
         type="RPN",
