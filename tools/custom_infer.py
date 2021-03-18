@@ -223,11 +223,15 @@ class CenterPoint:
             self.points =  np.fromfile(os.path.join(pc_folder,ipfile),dtype=np.float32)           
             # print(points.shape)
             # print(f"input points shape: {points.shape}")
-            num_features =  5       
-            self.points = self.points.reshape([-1, 4])
-            # self.points[:, 4] = 0 # timestamp value #
+            ##The below lines are for default pc 
+            num_features = 5        
+            self.points = points.reshape([-1, num_features])
+            self.points[:, 4] = 0 # timestamp value
             ##The above modification is required on custom data
-            self.points = np.hstack((self.points, np.zeros((self.points.shape[0], 1), dtype=self.points.dtype))) 
+            #num_features =  5       
+            #self.points = self.points.reshape([-1, 4])
+            # self.points[:, 4] = 0 # timestamp value #            
+            #self.points = np.hstack((self.points, np.zeros((self.points.shape[0], 1), dtype=self.points.dtype))) 
             
             voxels, coords, num_points = self.voxel_generator.generate(self.points)
             num_voxels = np.array([voxels.shape[0]], dtype=np.int64)
@@ -307,22 +311,22 @@ class CenterPoint:
 
 
 def main():
-    # args = parse_args()  
+    args = parse_args()  
 
-    # config_path = args.config
-    # model_path = args.checkpoint
-    # opsavepath =args.save_dir   
-    # pc_folder = args.pc_folder
+    config_path = args.config
+    model_path = args.checkpoint
+    opsavepath =args.save_dir   
+    pc_folder = args.pc_folder
 
     # config_path = '/content/Centerpoint_PC/configs/nusc/pp/cust_cntpt_pp02voxel_2fcn10sweep.py'
     # model_path = '/content/drive/MyDrive/PointCloud_model/centerpoint_nusc/latest.pth'
     # opsavepath ='/content/drive/MyDrive/PointCloud_model'   
     # pc_folder = '/content/drive/MyDrive/PointCloudData/customer'
 
-    config_path = '/content/Centerpoint_PC/configs/nusc/voxelnet/custom_cntpt_voxelnet_0075voxel_dcn_flip.py'
-    model_path = '/content/drive/MyDrive/PointCloud_model/centerpoint_nusc/voxelnet_converted.pth'
-    opsavepath ='/content/drive/MyDrive/PointCloudData/od_cntpt'   
-    pc_folder = '/content/drive/MyDrive/PointCloudData/customer'
+#     config_path = '/content/Centerpoint_PC/configs/nusc/voxelnet/custom_cntpt_voxelnet_0075voxel_dcn_flip.py'
+#     model_path = '/content/drive/MyDrive/PointCloud_model/centerpoint_nusc/voxelnet_converted.pth'
+#     opsavepath ='/content/drive/MyDrive/PointCloudData/od_cntpt'   
+#     pc_folder = '/content/drive/MyDrive/PointCloudData/customer'
 
     cntrpt = CenterPoint(config_path, model_path,opsavepath)    
     cntrpt.initialize()
